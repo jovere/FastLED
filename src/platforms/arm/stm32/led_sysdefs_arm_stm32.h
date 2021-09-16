@@ -1,13 +1,17 @@
 #ifndef __INC_LED_SYSDEFS_ARM_SAM_H
 #define __INC_LED_SYSDEFS_ARM_SAM_H
 
-#if defined(STM32F10X_MD) || defined(STM32F2XX)
+#if defined(STM32F10X_MD) || defined(STM32F2XX) || defined(STM32F407xx)
 
+#if defined(STM32F407xx)
+#include "stm32f407xx.h"
+#else
 #include <application.h>
+#endif
 
-#define FASTLED_NAMESPACE_BEGIN namespace NSFastLED {
-#define FASTLED_NAMESPACE_END }
-#define FASTLED_USING_NAMESPACE using namespace NSFastLED;
+//#define FASTLED_NAMESPACE_BEGIN namespace NSFastLED {
+//#define FASTLED_NAMESPACE_END }
+//#define FASTLED_USING_NAMESPACE using namespace NSFastLED;
 
 // reusing/abusing cli/sei defs for due
 #define cli()  __disable_irq(); __disable_fault_irq();
@@ -55,7 +59,9 @@ typedef volatile       uint8_t RwReg; /**< Read-Write 8-bit register (volatile u
 
 #define FASTLED_NO_PINMAP
 
-#if defined(STM32F2XX)
+#if defined(STM32F407xx)
+#define F_CPU 168000000
+#elif defined(STM32F2XX)
 #define F_CPU 120000000
 #else
 #define F_CPU 72000000

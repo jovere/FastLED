@@ -17,6 +17,12 @@
 #  endif
 #endif
 
+extern unsigned long micros();
+extern unsigned long millis();
+extern void delayMicroseconds(unsigned int us);
+extern void delay(unsigned long ms);
+extern void yield();
+
 #ifndef __PROG_TYPES_COMPAT__
 #define __PROG_TYPES_COMPAT__
 #endif
@@ -33,7 +39,7 @@
 #include <DMXSerial.h>
 #endif
 
-#include <stdint.h>
+#include <cstdint>
 
 #include "cpp_compat.h"
 
