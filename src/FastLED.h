@@ -52,7 +52,6 @@ extern void yield();
 
 #include "controller.h"
 #include "fastpin.h"
-#include "fastspi_types.h"
 #include "dmx.h"
 
 #include "platforms.h"
@@ -68,8 +67,9 @@ extern void yield();
 #include "noise.h"
 #include "power_mgt.h"
 
-#include "fastspi.h"
-#include "chipsets.h"
+//#include "chipsets.h"
+
+#include "fastleds_neopixelstm32dma_controller.h"
 
 FASTLED_NAMESPACE_BEGIN
 
@@ -205,7 +205,7 @@ public:
 	/// @param nLedsIfOffset - number of leds (4 argument version)
 	/// @returns a reference to the added controller
 	static CLEDController &addLeds(CLEDController *pLed, struct CRGB *data, int nLedsOrOffset, int nLedsIfOffset = 0);
-
+#if 0
 	/// @name Adding SPI based controllers
   //@{
 	/// Add an SPI based  CLEDController instance to the world.
@@ -283,7 +283,7 @@ public:
 
 #endif
 	//@}
-
+#endif
 #ifdef FASTLED_HAS_CLOCKLESS
 	/// @name Adding 3-wire led controllers
 	//@{
@@ -371,7 +371,14 @@ public:
 		return addLeds(&c, data, nLedsOrOffset, nLedsIfOffset);
 	}
 
+    template<EOrder RGB_ORDER>
+    static CLEDController &addLeds(struct CRGB *data, int nLedsOrOffset, int nLedsIfOffset = 0)
+    {
+        static fastleds_neopixelstm32dma_controller<RGB_ORDER> controller;
+        return addLeds(&controller, data, nLedsOrOffset, nLedsIfOffset);
+    }
 #ifdef USE_OCTOWS2811
+#include "platforms/arm/k20/octows2811_controller.h"
 	template<OWS2811 CHIPSET, EOrder RGB_ORDER>
 	static CLEDController &addLeds(struct CRGB *data, int nLedsOrOffset, int nLedsIfOffset = 0)
 	{
