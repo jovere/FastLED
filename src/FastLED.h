@@ -371,12 +371,6 @@ public:
 		return addLeds(&c, data, nLedsOrOffset, nLedsIfOffset);
 	}
 
-    template<EOrder RGB_ORDER>
-    static CLEDController &addLeds(struct CRGB *data, int nLedsOrOffset, int nLedsIfOffset = 0)
-    {
-        static fastleds_neopixelstm32dma_controller<RGB_ORDER> controller;
-        return addLeds(&controller, data, nLedsOrOffset, nLedsIfOffset);
-    }
 #ifdef USE_OCTOWS2811
 #include "platforms/arm/k20/octows2811_controller.h"
 	template<OWS2811 CHIPSET, EOrder RGB_ORDER>
