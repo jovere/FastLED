@@ -74,7 +74,7 @@ public:
 #define _R(T) struct __gen_struct_ ## T
 #define _FL_DEFPIN(PIN, BIT, L) template<> class FastPin<PIN> : public _ARMPIN<PIN, BIT, 1 << BIT, _R(GPIO ## L)> {};
 
-#if defined(STM32F10X_MD) || defined(STM32F407xx)
+#if defined(STM32F10X_MD) || defined(STM32F407xx) || defined(STM32F411xE)
 #define _RD32(T) struct __gen_struct_ ## T { static __attribute__((always_inline)) inline volatile GPIO_TypeDef * r() { return T; } };
 #define _FL_IO(L,C) _RD32(GPIO ## L);  _FL_DEFINE_PORT3(L, C, _R(GPIO ## L));
 
@@ -112,7 +112,7 @@ _FL_IO(G,6);
 #endif
 
 // Actual pin definitions
-#if defined(STM32F2XX) || defined(STM32F407xx)// Photon Particle
+#if defined(STM32F2XX) || defined(STM32F407xx) || defined(STM32F411xE)// Photon Particle
 
 // https://github.com/focalintent/FastLED-Sparkcore/blob/master/firmware/fastpin_arm_stm32.h
 #define MAX_PIN 20

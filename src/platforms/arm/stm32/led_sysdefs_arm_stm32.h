@@ -1,10 +1,12 @@
 #ifndef __INC_LED_SYSDEFS_ARM_SAM_H
 #define __INC_LED_SYSDEFS_ARM_SAM_H
 
-#if defined(STM32F10X_MD) || defined(STM32F2XX) || defined(STM32F407xx)
+#if defined(STM32F10X_MD) || defined(STM32F2XX) || defined(STM32F407xx) || defined(STM32F411xE)
 
 #if defined(STM32F407xx)
 #include "stm32f407xx.h"
+#elif defined(STM32F411xE)
+#include "stm32f411xe.h"
 #else
 #include <application.h>
 #endif
@@ -61,6 +63,8 @@ typedef volatile       uint8_t RwReg; /**< Read-Write 8-bit register (volatile u
 
 #if defined(STM32F407xx)
 #define F_CPU 168000000
+#elif defined(STM32F411xE)
+#define F_CPU 100000000
 #elif defined(STM32F2XX)
 #define F_CPU 120000000
 #else
