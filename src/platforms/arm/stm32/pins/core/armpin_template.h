@@ -23,6 +23,7 @@
 #include "fl/stl/compiler_control.h"
 #include "fl/stl/noexcept.h"
 #include "platforms/arm/stm32/stm32_bitbang_pin.h"
+#include "platforms/arm/stm32/is_stm32.h"  // FL_IS_STM32_BARE, FL_IS_STM32_F1
 
 FL_DISABLE_WARNING_PUSH
 FL_DISABLE_WARNING_DEPRECATED_REGISTER
@@ -41,17 +42,46 @@ public:
   typedef volatile u32 * port_ptr_t;
   typedef u32 port_t;
 
+#if defined(FL_IS_STM32_BARE)
+private:
+  // Bare-metal pin mode: push-pull output or floating input.
+  inline static void bareSetMode(bool output) FL_NO_EXCEPT {
+#if defined(FL_IS_STM32_F1)
+    // F1: 4 config bits per pin in CRL (pins 0-7) / CRH (pins 8-15).
+    // Output: MODE=10 (2 MHz), CNF=00 push-pull -> 0x2. Input floating -> 0x4.
+    volatile u32 &cr = (_BIT < 8) ? _GPIO::r()->CRL : _GPIO::r()->CRH;
+    const u32 shift = (_BIT % 8u) * 4u;
+    cr = (cr & ~(0xFu << shift)) | ((output ? 0x2u : 0x4u) << shift);
+#else
+    // All other families: 2 bits per pin in MODER (00 input, 01 output).
+    const u32 shift = _BIT * 2u;
+    _GPIO::r()->MODER = (_GPIO::r()->MODER & ~(0x3u << shift)) | ((output ? 0x1u : 0x0u) << shift);
+#endif
+  }
+public:
+#endif
+
   inline static void setOutput() {
+#if defined(FL_IS_STM32_BARE)
+    // No Arduino BSP: program the GPIO mode register directly.
+    // The application must have enabled this port's RCC clock.
+    bareSetMode(true);
+#else
     // Configure physical MCU hardware GPIO registers via Arduino BSP
     ::pinMode(PIN, OUTPUT);
+#endif
 
     // Update FastLED's internal pin state tracking
     fl::pinMode(PIN, PinMode::Output);
   }
 
   inline static void setInput() {
+#if defined(FL_IS_STM32_BARE)
+    bareSetMode(false);
+#else
     // Configure physical MCU hardware GPIO registers via Arduino BSP
     ::pinMode(PIN, INPUT);
+#endif
 
     // Update FastLED's internal pin state tracking
     fl::pinMode(PIN, PinMode::Input);

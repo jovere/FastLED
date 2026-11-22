@@ -373,9 +373,9 @@
 
 #else
     // stm32_def.h not found - STM32duino HAL not available
-    // This is expected when using Arduino Mbed framework
+    // This is expected when using Arduino Mbed framework or a bare-metal build
     // Hardware SPI features will be disabled, falling back to software bitbang
-    #if !defined(FL_IS_STM32_MBED)
+    #if !defined(FL_IS_STM32_MBED) && !defined(FL_IS_STM32_BARE)
         #warning "STM32 HAL not available (stm32_def.h not found) - hardware SPI disabled"
     #endif
 #endif
@@ -475,7 +475,9 @@
 // IMPORTANT: Hardware SPI implementation requires STM32duino HAL/LL drivers.
 // The Arduino Mbed framework does NOT provide compatible HAL/LL drivers.
 // Disable hardware SPI when using Mbed framework.
-#if !defined(FL_IS_STM32_MBED)
+// Bare-metal builds (FASTLED_STM32_BARE) cannot assume any HAL modules are
+// enabled either, so they also use the software fallback.
+#if !defined(FL_IS_STM32_MBED) && !defined(FL_IS_STM32_BARE)
 
 // Dual-SPI (2 parallel data lanes) support
 // Currently implemented only for stream-based DMA platforms (F2/F4/F7/H7/L4)
@@ -510,7 +512,7 @@
 //     #define FL_STM32_HAS_SPI_HW_8
 // #endif
 
-#else
+#elif defined(FL_IS_STM32_MBED)
     // Mbed framework detected - hardware SPI not supported
     // FastLED will fall back to software bitbang implementation
     #pragma message "FastLED: Mbed framework detected - hardware SPI disabled (using software bitbang)"

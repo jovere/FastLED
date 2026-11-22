@@ -5,6 +5,9 @@
 #include "platforms/cycle_type.h"
 #include "fl/stl/compiler_control.h"
 #include "platforms/arm/stm32/core_detection.h"
+#if defined(FL_IS_STM32_BARE)
+#include "platforms/arm/stm32/stm32_bare.h"  // CMSIS: DWT, __CORTEX_M
+#endif
 #include "platforms/cpu_frequency.h"
 #include "fl/stl/noexcept.h"
 

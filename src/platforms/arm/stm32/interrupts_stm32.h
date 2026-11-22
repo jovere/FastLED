@@ -18,7 +18,9 @@
 
 #include "platforms/is_platform.h"
 
-#if defined(FL_IS_STM32_PARTICLE)
+#if defined(FL_IS_STM32_BARE)
+    #include "platforms/arm/stm32/interrupts/interrupts_stm32_bare.h"
+#elif defined(FL_IS_STM32_PARTICLE)
     #include "platforms/arm/stm32/interrupts/interrupts_stm32_particle.h"
 #elif defined(FL_IS_STM32_LIBMAPLE)
     #include "platforms/arm/stm32/interrupts/interrupts_stm32_libmaple.h"

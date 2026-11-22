@@ -5,6 +5,8 @@
 
 // ok no namespace fl
 
-#ifdef FL_IS_STM32
+#if defined(FL_IS_STM32_BARE)
+#include "platforms/arm/stm32/io_stm32_bare.hpp"
+#elif defined(FL_IS_STM32)
 #include "platforms/arduino/io_arduino.hpp"
 #endif

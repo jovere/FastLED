@@ -137,6 +137,18 @@
 // ========================================
 
   // IWYU pragma: end_keep
+// ========================================
+// Bare metal (FASTLED_STM32_BARE, no Arduino core)
+// ========================================
+// No ARDUINO_* board macro exists, so the pin map is chosen from the CMSIS
+// device macro. Pin numbers are port-linear: PA0=0 ... PA15=15, PB0=16, ...
+
+#elif defined(FL_IS_STM32_BARE) && (defined(STM32F411xE) || defined(STM32F401xC) || defined(STM32F401xE))
+  #define FASTLED_STM32_BOARD_FILE "platforms/arm/stm32/pins/boards/f4/f411ce_blackpill.h"
+  // IWYU pragma: begin_keep
+  #include "families/stm32f4.h"  // nolint
+
+  // IWYU pragma: end_keep
 #else
   #error "STM32: Unknown board. Check your ARDUINO_* board macro and add it to src/platforms/arm/stm32/pins/fastpin_dispatcher.h. See src/platforms/arm/stm32/pins/README.md for architecture guide and examples."
 #endif

@@ -184,6 +184,15 @@
 #ifdef __cplusplus
 namespace fl {
 namespace MINIMP3_NAMESPACE {
+
+/* FastLED: <stdint.h> is not included (see FASTLED.patch), and
+   fl/stl/stdint.h only provides the standard names up to 32 bits. Name the
+   64-bit types here, inside the namespace, so they cannot collide with a
+   system typedef when <stdint.h> is also visible. Without this the fixed-point
+   kernels only compile when some other header (e.g. Arduino.h) happened to
+   pull in <stdint.h> first, which bare-metal builds do not. */
+typedef fl::i64 int64_t;
+typedef fl::u64 uint64_t;
 #endif
 
 typedef struct

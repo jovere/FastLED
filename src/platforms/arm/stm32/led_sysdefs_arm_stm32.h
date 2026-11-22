@@ -12,6 +12,7 @@
 /// - led_sysdefs_stm32duino.h      - Official STM32duino core
 /// - led_sysdefs_stm32_mbed.h      - Arduino Mbed OS framework for STM32
 /// - led_sysdefs_stm32_zephyr.h    - ArduinoCore-zephyr STM32 boards
+/// - led_sysdefs_stm32_bare.h      - Bare metal CMSIS (no Arduino core)
 ///
 /// Each core-specific header defines:
 /// - F_CPU clock frequency
@@ -30,7 +31,9 @@
 // Core Detection and Dispatch
 // ============================================================================
 
-#if defined(FL_IS_STM32_PARTICLE)
+#if defined(FL_IS_STM32_BARE)
+    #include "platforms/arm/stm32/led_sysdefs/led_sysdefs_stm32_bare.h"
+#elif defined(FL_IS_STM32_PARTICLE)
     #include "platforms/arm/stm32/led_sysdefs/led_sysdefs_stm32_particle.h"
 #elif defined(FL_IS_STM32_LIBMAPLE)
     #include "platforms/arm/stm32/led_sysdefs/led_sysdefs_stm32_libmaple.h"

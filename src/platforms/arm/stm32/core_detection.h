@@ -16,6 +16,8 @@
 /// - FL_IS_STM32_LIBMAPLE: Roger Clark Arduino_STM32 core (legacy, deprecated)
 /// - FL_IS_STM32_PARTICLE: Particle firmware (Photon/Electron)
 /// - FL_IS_STM32_ZEPHYR: ArduinoCore-zephyr STM32 boards (UNO Q)
+/// - FL_IS_STM32_BARE: Bare-metal CMSIS/LL/HAL project, no Arduino core
+///   (opt-in with -DFASTLED_STM32_BARE)
 /// - FL_IS_STM32_UNKNOWN: Unknown/unsupported core
 ///
 /// Detection logic based on research from:
@@ -80,13 +82,27 @@
   #define _FL_STM32_HAS_PARTICLE 0
 #endif
 
+// Bare metal — explicit opt-in for projects built directly on ST's CMSIS
+// device headers (CubeMX/LL/HAL, plain CMake/Make) with no Arduino core.
+// Never auto-detected, so it cannot be triggered by a stray macro.
+#if defined(FASTLED_STM32_BARE)
+  #define _FL_STM32_HAS_BARE 1
+#else
+  #define _FL_STM32_HAS_BARE 0
+#endif
+
 // Count how many cores are detected (for validation)
-#define _FL_STM32_CORE_COUNT (_FL_STM32_HAS_STMDUINO + _FL_STM32_HAS_ZEPHYR + _FL_STM32_HAS_MBED + _FL_STM32_HAS_LIBMAPLE + _FL_STM32_HAS_PARTICLE)
+#define _FL_STM32_CORE_COUNT (_FL_STM32_HAS_STMDUINO + _FL_STM32_HAS_ZEPHYR + _FL_STM32_HAS_MBED + _FL_STM32_HAS_LIBMAPLE + _FL_STM32_HAS_PARTICLE + _FL_STM32_HAS_BARE)
 
 // ArduinoCore-zephyr STM32 boards
 // UNO Q uses an STM32U585 MCU behind the ArduinoCore-zephyr API.
 // Detection: platform.txt emits ARDUINO_ARCH_ZEPHYR and ARDUINO_UNO_Q.
-#if defined(ARDUINO_ARCH_ZEPHYR) && (defined(ARDUINO_UNO_Q) || defined(CONFIG_BOARD_ARDUINO_UNO_Q) || defined(CONFIG_SOC_STM32U585XX))
+// Bare metal (no Arduino core) - opt-in via FASTLED_STM32_BARE.
+// The application provides millis()/micros()/delay()/delayMicroseconds().
+#if defined(FASTLED_STM32_BARE)
+  #define FL_IS_STM32_BARE
+
+#elif defined(ARDUINO_ARCH_ZEPHYR) && (defined(ARDUINO_UNO_Q) || defined(CONFIG_BOARD_ARDUINO_UNO_Q) || defined(CONFIG_SOC_STM32U585XX))
   #define FL_IS_STM32_ZEPHYR
 
 // Arduino Mbed OS framework for STM32 boards, e.g. GIGA R1.
@@ -149,7 +165,7 @@
   #define FL_IS_STM32_UNKNOWN
 
   #warning "Unknown STM32 Arduino core detected - FastLED compatibility not guaranteed"
-  #warning "Supported cores: STM32duino (ARDUINO_ARCH_STM32), Arduino Mbed (ARDUINO_ARCH_MBED), ArduinoCore-zephyr UNO Q (ARDUINO_ARCH_ZEPHYR + ARDUINO_UNO_Q), Arduino_STM32 (__STM32F1__/__STM32F4__), Particle (PLATFORM_ID/SPARK)"
+  #warning "Supported cores: STM32duino (ARDUINO_ARCH_STM32), Arduino Mbed (ARDUINO_ARCH_MBED), ArduinoCore-zephyr UNO Q (ARDUINO_ARCH_ZEPHYR + ARDUINO_UNO_Q), Arduino_STM32 (__STM32F1__/__STM32F4__), Particle (PLATFORM_ID/SPARK), bare metal (FASTLED_STM32_BARE)"
 #endif
 
 // ============================================================================
@@ -157,7 +173,7 @@
 // ============================================================================
 
 #if _FL_STM32_CORE_COUNT > 1
-  #error "Multiple STM32 Arduino cores detected - conflicting definitions. Check your build environment."
+  #error "Multiple STM32 cores detected - conflicting definitions. Check your build environment (FASTLED_STM32_BARE cannot be combined with an Arduino core)."
 #elif _FL_STM32_CORE_COUNT == 0
   // This is handled by FL_STM32_CORE_UNKNOWN above
 #endif
@@ -169,6 +185,7 @@
 #undef _FL_STM32_HAS_MBED
 #undef _FL_STM32_HAS_LIBMAPLE
 #undef _FL_STM32_HAS_PARTICLE
+#undef _FL_STM32_HAS_BARE
 
 // ============================================================================
 // Core Feature Detection - F_CPU Behavior
