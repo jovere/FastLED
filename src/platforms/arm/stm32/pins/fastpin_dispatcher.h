@@ -133,20 +133,27 @@
   #include "families/stm32g0.h"  // nolint
 
 // ========================================
-// Unknown Board - Error with Guidance
-// ========================================
-
-  // IWYU pragma: end_keep
-// ========================================
 // Bare metal (FASTLED_STM32_BARE, no Arduino core)
 // ========================================
 // No ARDUINO_* board macro exists, so the pin map is chosen from the CMSIS
-// device macro. Pin numbers are port-linear: PA0=0 ... PA15=15, PB0=16, ...
+// device macro. The default is the 48-pin F411CE/F401Cx (BlackPill) map:
+// PA0-PA15 = 0-15, then PB0-PB10 = 16-26, PB12-PB15 = 27-30 (PB11 is not
+// bonded on that package), PC13-PC15 = 31-33, PH0-PH1 = 34-35.
+// For other packages (e.g. the 64-pin F411RE), define FASTLED_STM32_BOARD_FILE
+// to another board file such as
+// "platforms/arm/stm32/pins/boards/f4/f411re_nucleo.h".
 
+  // IWYU pragma: end_keep
 #elif defined(FL_IS_STM32_BARE) && (defined(STM32F411xE) || defined(STM32F401xC) || defined(STM32F401xE))
-  #define FASTLED_STM32_BOARD_FILE "platforms/arm/stm32/pins/boards/f4/f411ce_blackpill.h"
+  #ifndef FASTLED_STM32_BOARD_FILE
+    #define FASTLED_STM32_BOARD_FILE "platforms/arm/stm32/pins/boards/f4/f411ce_blackpill.h"
+  #endif
   // IWYU pragma: begin_keep
   #include "families/stm32f4.h"  // nolint
+
+// ========================================
+// Unknown Board - Error with Guidance
+// ========================================
 
   // IWYU pragma: end_keep
 #else

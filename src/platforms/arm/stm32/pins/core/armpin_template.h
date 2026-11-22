@@ -65,26 +65,28 @@ public:
 #if defined(FL_IS_STM32_BARE)
     // No Arduino BSP: program the GPIO mode register directly.
     // The application must have enabled this port's RCC clock.
+    // fl::pinMode() is skipped: it needs the HAL GPIO module and would only
+    // warn; the register write is the whole job here.
     bareSetMode(true);
 #else
     // Configure physical MCU hardware GPIO registers via Arduino BSP
     ::pinMode(PIN, OUTPUT);
-#endif
 
     // Update FastLED's internal pin state tracking
     fl::pinMode(PIN, PinMode::Output);
+#endif
   }
 
   inline static void setInput() {
 #if defined(FL_IS_STM32_BARE)
-    bareSetMode(false);
+    bareSetMode(false);  // see setOutput()
 #else
     // Configure physical MCU hardware GPIO registers via Arduino BSP
     ::pinMode(PIN, INPUT);
-#endif
 
     // Update FastLED's internal pin state tracking
     fl::pinMode(PIN, PinMode::Input);
+#endif
   }
 
   // Set pin HIGH - use BSRR lower 16 bits (same for ALL families)

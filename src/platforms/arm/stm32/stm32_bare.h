@@ -1,4 +1,3 @@
-// ok no namespace fl
 #pragma once
 
 // IWYU pragma: private
@@ -19,6 +18,9 @@
 ///   (e.g. from SysTick, HAL_GetTick() or a free-running timer). FastLED
 ///   builds delay()/delayMicroseconds() on top of these.
 /// - Enable the RCC clock of any GPIO port it asks FastLED to drive.
+///
+/// FastLED starts the DWT cycle counter itself on first use of a cycle-based
+/// delay (see stm32_bare_ensure_cycle_counter()).
 ///
 /// Serial I/O (FL_WARN, fl::print, ...) is a no-op in this mode.
 
@@ -48,6 +50,26 @@
 #else
   #error "FASTLED_STM32_BARE: STM32 family not detected or its CMSIS device header (e.g. stm32f4xx.h) is not on the include path. Define the family macro (e.g. -DSTM32F4xx) and add the CMSIS Device/Include directory."
 #endif
+
+namespace fl {
+
+/// Start the DWT cycle counter if it is not already running.
+/// After reset CYCCNT is stopped unless a debugger enabled it, and nothing
+/// else starts it in bare-metal mode, so cycle-based delays call this first.
+inline void stm32_bare_ensure_cycle_counter() FL_NO_EXCEPT {
+#if defined(DWT)
+    if ((DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk) == 0) {
+#if defined(DCB)
+        DCB->DEMCR |= DCB_DEMCR_TRCENA_Msk;
+#elif defined(CoreDebug)
+        CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+#endif
+        DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
+    }
+#endif
+}
+
+}  // namespace fl
 
 // Clock functions supplied by the application. Same declarations as the
 // stub platform (platforms/stub/time_stub.h) so the two never conflict.

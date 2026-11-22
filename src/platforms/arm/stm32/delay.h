@@ -33,6 +33,9 @@ FASTLED_FORCE_INLINE void delayNanoseconds_impl(u32 ns, u32 hz) FL_NO_EXCEPT {
   u32 cycles = cycles_from_ns_stm32(ns, hz);
   if (cycles == 0) return;
 #if defined(DWT) || (defined(__CORTEX_M) && (__CORTEX_M >= 3))
+#if defined(FL_IS_STM32_BARE)
+  stm32_bare_ensure_cycle_counter();
+#endif
   delay_cycles_dwt_arm(cycles);
 #else
   delayMicroseconds((ns + 999) / 1000);

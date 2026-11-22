@@ -16,13 +16,15 @@
 
 // Helper macro to get compile-time CPU frequency
 // Note: Uses preprocessor for compatibility with constexpr functions in C++11
-#if defined(STM32F2XX)
+#if defined(STM32F2XX) || defined(STM32F2xx)
   // STM32F2: 120 MHz
   #define FL_CPU_FREQUENCY() 120000000UL
-#elif defined(STM32F4)
+#elif defined(STM32F4) || defined(STM32F4xx)
   // STM32F4: 100 MHz
+  // (STM32F4xx too: bare-metal builds define it on the command line, while
+  // STM32F4 only appears once the CMSIS header has been included.)
   #define FL_CPU_FREQUENCY() 100000000UL
-#elif defined(STM32F1) || defined(__STM32F1__) || defined(STM32F10X_MD)
+#elif defined(STM32F1) || defined(STM32F1xx) || defined(__STM32F1__) || defined(STM32F10X_MD)
   // STM32F1: 72 MHz
   #define FL_CPU_FREQUENCY() 72000000UL
 #elif defined(STM32G0xx)

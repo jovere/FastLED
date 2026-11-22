@@ -192,7 +192,8 @@
 // ============================================================================
 
 // Does this core define F_CPU as a runtime variable (SystemCoreClock)?
-#if defined(FL_IS_STM32_STMDUINO)
+// Bare metal defaults F_CPU to SystemCoreClock (led_sysdefs_stm32_bare.h).
+#if defined(FL_IS_STM32_STMDUINO) || defined(FL_IS_STM32_BARE)
   #define FL_STM32_F_CPU_IS_RUNTIME_VARIABLE 1
 #else
   #define FL_STM32_F_CPU_IS_RUNTIME_VARIABLE 0
