@@ -31,7 +31,7 @@
 #include "platforms/esp/32/core/delay.h"
 #elif defined(ESP32C3) || defined(ESP32C6)
 #include "platforms/esp/32/core/delay_riscv.h"
-#elif defined(ARDUINO_ARCH_RP2040)
+#elif defined(ARDUINO_ARCH_RP2040) || (defined(PICO_RP2040) && PICO_RP2040)
 #include "platforms/arm/rp/rp2040/delay.h"
 #elif defined(NRF52_SERIES)
 #include "platforms/arm/nrf52/delay.h"

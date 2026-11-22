@@ -54,7 +54,7 @@
 #include "platforms/arm/same53/led_sysdefs_arm_same53.h"  // ok platform headers
 #elif defined(ARDUINO_ARCH_RP2350) || defined(PICO_RP2350)
 #include "platforms/arm/rp/rp2350/led_sysdefs_arm_rp2350.h"  // ok platform headers
-#elif defined(ARDUINO_ARCH_RP2040) // not sure a pico-sdk define for this
+#elif defined(ARDUINO_ARCH_RP2040) || (defined(PICO_RP2040) && PICO_RP2040)
 // RP2040 (Raspberry Pi Pico etc)
 #include "platforms/arm/rp/rp2040/led_sysdefs_arm_rp2040.h"  // ok platform headers
 #elif defined(ESP8266)

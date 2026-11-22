@@ -50,7 +50,7 @@
 #elif defined(ESP32)
   // Fallback for ESP32/ESP32-C3/ESP32-C6: assume 160 MHz (conservative default)
   #define FL_CPU_FREQUENCY() 160000000UL
-#elif defined(ARDUINO_ARCH_RP2040)
+#elif defined(ARDUINO_ARCH_RP2040) || (defined(PICO_RP2040) && PICO_RP2040)
   // RP2040: standard 125 MHz
   #define FL_CPU_FREQUENCY() 125000000UL
 #elif defined(NRF52_SERIES)

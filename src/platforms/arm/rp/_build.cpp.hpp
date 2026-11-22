@@ -11,6 +11,7 @@
 #include "platforms/arm/rp/init_rp.cpp.hpp"
 #include "platforms/arm/rp/io_rp.cpp.hpp"
 #include "platforms/arm/rp/mutex_rp.cpp.hpp"
+#include "platforms/arm/rp/platform_time_rp_bare.cpp.hpp"
 #include "platforms/arm/rp/semaphore_rp.cpp.hpp"
 #include "platforms/arm/rp/wifi_rp.cpp.hpp"
 

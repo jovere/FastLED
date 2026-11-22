@@ -26,7 +26,7 @@
 #elif defined(ESP32C3) || defined(ESP32C6)
 #include "platforms/shared/delay_cycles_generic.h"
 #include "platforms/esp/32/core/delaycycles_riscv.h"
-#elif defined(ARDUINO_ARCH_RP2040)
+#elif defined(ARDUINO_ARCH_RP2040) || (defined(PICO_RP2040) && PICO_RP2040)
 #include "platforms/shared/delay_cycles_generic.h"
 #include "platforms/arm/rp/rp2040/delaycycles.h"
 #elif defined(NRF52_SERIES)
