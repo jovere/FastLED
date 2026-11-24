@@ -313,30 +313,35 @@ bool ChannelEngineRpPio::startClockless(TxSlot& slot, size_t job_index) FL_NO_EX
         size_t byte_offset = 0;
         for (size_t byte_index = 0; byte_index < input.size(); ++byte_index) {
             // One byte from each lane; lanes beyond `lanes` stay 0. Aligned
-            // because transpose8x1_MSB loads it as two 32-bit words, which
-            // fault when unaligned on Cortex-M0+.
+            // because transpose8x1 loads it as two 32-bit words, which fault
+            // when unaligned on Cortex-M0+.
             alignas(4) u8 column[8] = {};
             for (u8 lane = 0; lane < lanes; ++lane) {
                 column[lane] = lane_data[lane][byte_index];
             }
-            // planes[0] is the MSB plane; lane 0 is each plane's bit 0.
-            u8 planes[8];
-            fl::transpose8x1_MSB(column, planes);
-            // Store transfers little-endian: DMA reads narrow transfers from
-            // ascending byte addresses.
+            // transpose8x1 stores planes 3..0 as its first word and planes
+            // 7..4 as its second, each with the higher plane in the higher
+            // byte and lane 0 in each plane's bit 0: already the transfer
+            // words, no byte reordering needed.
+            u32 planes[2];
+            fl::transpose8x1(column, reinterpret_cast<u8*>(planes));
+            const u32 high = planes[1];  // planes 7..4
+            const u32 low = planes[0];   // planes 3..0
             if (lanes == 8) {
-                words[byte_offset / 4u] = (static_cast<u32>(planes[0]) << 24) |
-                                          (static_cast<u32>(planes[1]) << 16) |
-                                          (static_cast<u32>(planes[2]) << 8) | planes[3];
-                words[byte_offset / 4u + 1u] = (static_cast<u32>(planes[4]) << 24) |
-                                               (static_cast<u32>(planes[5]) << 16) |
-                                               (static_cast<u32>(planes[6]) << 8) | planes[7];
+                words[byte_offset / 4u] = high;
+                words[byte_offset / 4u + 1u] = low;
             } else {
-                u32 low = 0;  // 8 planes of `lanes` bits, MSB plane first
-                for (u8 plane = 0; plane < 8; ++plane) {
-                    low = (low << lanes) | planes[plane];
+                // 8 planes of `lanes` bits, MSB plane first.
+                u32 packed = 0;
+                for (int shift = 24; shift >= 0; shift -= 8) {
+                    packed = (packed << lanes) | ((high >> shift) & 0xFFu);
                 }
-                words[byte_offset / 4u] |= low << (8u * (byte_offset % 4u));
+                for (int shift = 24; shift >= 0; shift -= 8) {
+                    packed = (packed << lanes) | ((low >> shift) & 0xFFu);
+                }
+                // Store transfers little-endian: DMA reads narrow transfers
+                // from ascending byte addresses.
+                words[byte_offset / 4u] |= packed << (8u * (byte_offset % 4u));
             }
             byte_offset += lanes;
         }
