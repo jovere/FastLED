@@ -123,7 +123,7 @@ FL_TEST_CASE("RP PIO TX waits for terminal state after DMA") {
     FL_REQUIRE_EQ(peripheral.capturedWords.size(), static_cast<size_t>(1));
     FL_CHECK_EQ(peripheral.capturedWords[0], 0x55AAFF00u);
     FL_CHECK_EQ(engine.lastWordCount(), static_cast<size_t>(4));
-    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::BUSY);
+    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::DRAINING);  // only DMA left: show() may return
     peripheral.dmaBusy = false;
     FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::DRAINING);
     FL_CHECK(channel->isInUse());
@@ -170,7 +170,7 @@ FL_TEST_CASE("RP PIO TX rejects a failed second queued start") {
     engine.show();
     peripheral.dmaBusy = false;
     peripheral.terminal = true;
-    FL_REQUIRE_EQ(engine.poll(), IChannelDriver::DriverState::DRAINING);
+    FL_REQUIRE_EQ(engine.poll(), IChannelDriver::DriverState::BUSY);  // second strip still queued
     peripheral.timeUs += 1000;
     peripheral.configureOk = false;
     FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::ERROR);
@@ -275,14 +275,14 @@ FL_TEST_CASE("RP PIO TX runs independent strips concurrently") {
     FL_CHECK_EQ(primary.transferCount, static_cast<size_t>(1));
     FL_CHECK_EQ(extras[0]->lastConfig.tx_pin, 9);
     FL_CHECK_EQ(extras[0]->transferCount, static_cast<size_t>(2));
-    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::BUSY);
+    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::DRAINING);  // both strips started
 
     // The short strip finishes first; the long one keeps the frame alive.
     primary.dmaBusy = false;
     primary.terminal = true;
-    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::BUSY);  // latch starts
+    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::DRAINING);  // latch starts
     primary.timeUs += 1000;
-    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::BUSY);  // second still sending
+    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::DRAINING);  // second still sending
     FL_CHECK_EQ(primary.deinitializeCalls, 1);  // short strip released its SM
     FL_CHECK(first->isInUse());  // frame not complete yet
     extras[0]->dmaBusy = false;
@@ -324,9 +324,9 @@ FL_TEST_CASE("RP PIO TX queues strips when no extra PIO resources are free") {
 
     primary.dmaBusy = false;
     primary.terminal = true;
-    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::DRAINING);
+    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::BUSY);  // second strip still queued
     primary.timeUs += 1000;
-    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::BUSY);
+    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::DRAINING);  // second strip started
     FL_CHECK_EQ(primary.startCalls, 2);
     FL_CHECK_EQ(primary.lastConfig.tx_pin, 9);
     primary.dmaBusy = false;
@@ -403,7 +403,7 @@ FL_TEST_CASE("RP FLEX_IO PIO SPI sends arbitrary pin pairs") {
     FL_REQUIRE_EQ(spi.capturedWords.size(), static_cast<size_t>(2));
     FL_CHECK_EQ(spi.capturedWords[0], 0xA5000000u);
     FL_CHECK_EQ(spi.capturedWords[1], 0x5A000000u);
-    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::BUSY);
+    FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::DRAINING);
     spi.dmaBusy = false;
     FL_CHECK_EQ(engine.poll(), IChannelDriver::DriverState::DRAINING);
     spi.terminal = true;

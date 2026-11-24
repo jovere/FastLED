@@ -189,13 +189,10 @@ IChannelDriver::DriverState ChannelEngineRpPio::poll() FL_NO_EXCEPT {
     if (mFailed) return fail(mError.c_str());
     if (!mActive) return DriverState::READY;
 
-    bool busy = false;
     if (mSpiActive) {
         if (!mSpiPeripheral) return fail("RP PIO SPI: missing peripheral");
         if (mSpiPeripheral->hasError()) return fail("RP PIO SPI: peripheral error");
-        if (mSpiPeripheral->isDmaBusy()) {
-            busy = true;
-        } else if (mSpiPeripheral->isTerminalComplete()) {
+        if (!mSpiPeripheral->isDmaBusy() && mSpiPeripheral->isTerminalComplete()) {
             mSpiPeripheral->deinitialize();
             mSpiActive = false;
             mTxExhausted = false;  // freed resources: queued jobs may start
@@ -205,10 +202,7 @@ IChannelDriver::DriverState ChannelEngineRpPio::poll() FL_NO_EXCEPT {
         if (!slot.active) continue;
         IRpPioTxPeripheral& peripheral = *slot.peripheral;
         if (peripheral.hasError()) return fail("RP PIO: peripheral error");
-        if (peripheral.isDmaBusy()) {
-            busy = true;
-            continue;
-        }
+        if (peripheral.isDmaBusy()) continue;
         if (!peripheral.isTerminalComplete()) continue;
         if (!slot.latchPending) {
             slot.latchDurationUs =
@@ -227,18 +221,21 @@ IChannelDriver::DriverState ChannelEngineRpPio::poll() FL_NO_EXCEPT {
         mTxExhausted = false;  // freed resources: queued jobs may start
     }
 
-    const size_t started_before = mNextJob;
     if (!dispatch()) {
         return fail(mJobs[mNextJob].spi ? "RP PIO SPI: unable to start queued channel"
                                         : "RP PIO: unable to start queued channel");
     }
-    if (mNextJob != started_before) busy = true;
     if (mNextJob >= mJobs.size() && !anyActive()) {
         releaseInFlight();
         mActive = false;
         return DriverState::READY;
     }
-    return busy ? DriverState::BUSY : DriverState::DRAINING;
+    // BUSY only while a queued job still needs poll() to start it. Once every
+    // job is with its DMA (or in its latch gap) the CPU has nothing left to
+    // do, so report DRAINING and let FastLED.show() return during the
+    // transfer. The transfer reads the engine's own words buffer, and the next
+    // frame's onBeginFrame() waits for READY, so frames cannot overlap.
+    return mNextJob < mJobs.size() ? DriverState::BUSY : DriverState::DRAINING;
 }
 
 bool ChannelEngineRpPio::startSpi(size_t job_index) FL_NO_EXCEPT {
