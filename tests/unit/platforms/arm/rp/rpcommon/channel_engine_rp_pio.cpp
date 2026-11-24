@@ -382,6 +382,65 @@ FL_TEST_CASE("RP PIO TX packs multi-lane planes MSB-plane first, lane 0 in the p
     }
 }
 
+FL_TEST_CASE("RP PIO TX packed words match a bit-by-bit reference for 1/2/4/8 lanes") {
+    // Reference: the original per-bit packing. Each data byte becomes 8
+    // bit-planes, MSB plane first, lane 0 in each plane's LSB; 8 lanes store
+    // planes 7..4 then 3..0 as two words, fewer lanes OR their column into
+    // the words little-endian.
+    u32 seed = 0x12345678u;
+    auto next = [&seed]() -> u8 {
+        seed = seed * 1664525u + 1013904223u;
+        return static_cast<u8>(seed >> 24);
+    };
+    const u8 laneCounts[] = {1, 2, 4, 8};
+    const size_t lengths[] = {1, 3, 4, 7, 150};
+    for (u8 lanes : laneCounts) {
+        for (size_t length : lengths) {
+            RpPioTxPeripheralMock& peripheral = resetTxMock();
+            ChannelEngineRpPio engine(createTxMockPeripheral());
+            fl::vector<fl::vector_psram<u8>> data;
+            for (u8 lane = 0; lane < lanes; ++lane) {
+                fl::vector_psram<u8> bytes;
+                for (size_t i = 0; i < length; ++i) bytes.push_back(next());
+                data.push_back(bytes);
+                engine.enqueue(makeChannel(12 + lane, bytes));
+            }
+            engine.show();
+            FL_REQUIRE_EQ(peripheral.lastConfig.lane_count, lanes);
+
+            fl::vector<u32> expected((length * lanes + 3u) / 4u, 0u);
+            size_t offset = 0;
+            for (size_t index = 0; index < length; ++index) {
+                u32 high = 0;
+                u32 low = 0;
+                for (int bit = 7; bit >= 0; --bit) {
+                    u32 plane = 0;
+                    for (u8 lane = 0; lane < lanes; ++lane) {
+                        plane |= static_cast<u32>((data[lane][index] >> bit) & 1u) << lane;
+                    }
+                    if (lanes == 8) {
+                        u32& half = bit >= 4 ? high : low;
+                        half = (half << 8) | plane;
+                    } else {
+                        low = (low << lanes) | plane;
+                    }
+                }
+                if (lanes == 8) {
+                    expected[offset / 4u] = high;
+                    expected[offset / 4u + 1u] = low;
+                } else {
+                    expected[offset / 4u] |= low << (8u * (offset % 4u));
+                }
+                offset += lanes;
+            }
+            FL_REQUIRE_EQ(peripheral.capturedWords.size(), expected.size());
+            for (size_t i = 0; i < expected.size(); ++i) {
+                FL_CHECK_EQ(peripheral.capturedWords[i], expected[i]);
+            }
+        }
+    }
+}
+
 FL_TEST_CASE("RP FLEX_IO PIO SPI sends arbitrary pin pairs") {
     resetTxMock();
     RpPioSpiPeripheralMock& spi = resetSpiMock();

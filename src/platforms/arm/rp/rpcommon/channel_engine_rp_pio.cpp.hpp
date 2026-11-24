@@ -3,6 +3,7 @@
 #include "platforms/arm/rp/rpcommon/channel_engine_rp_pio.h"
 
 #include "fl/log/log.h"
+#include "fl/math/transposition.h"
 #include "fl/stl/utility.h"
 
 namespace fl {
@@ -304,29 +305,37 @@ bool ChannelEngineRpPio::startClockless(TxSlot& slot, size_t job_index) FL_NO_EX
         const u8 unit = rpPioPackedTransferBytes(lanes);
         const size_t total_bytes = input.size() * lanes;
         words.resize((total_bytes + 3u) / 4u, 0u);
+        // Look each lane's data up once, not once per bit.
+        const u8* lane_data[8] = {};
+        for (u8 lane = 0; lane < lanes; ++lane) {
+            lane_data[lane] = mInFlightChannels[job.first + lane]->getData().data();
+        }
         size_t byte_offset = 0;
         for (size_t byte_index = 0; byte_index < input.size(); ++byte_index) {
-            u32 high = 0;  // planes 7..4 for 8 lanes, else unused
-            u32 low = 0;
-            for (int bit = 7; bit >= 0; --bit) {
-                u32 plane = 0;
-                for (u8 lane = 0; lane < lanes; ++lane) {
-                    const u8 value = mInFlightChannels[job.first + lane]->getData()[byte_index];
-                    plane |= static_cast<u32>((value >> bit) & 1u) << lane;
-                }
-                if (lanes == 8) {
-                    u32& half = bit >= 4 ? high : low;
-                    half = (half << 8) | plane;
-                } else {
-                    low = (low << lanes) | plane;
-                }
+            // One byte from each lane; lanes beyond `lanes` stay 0. Aligned
+            // because transpose8x1_MSB loads it as two 32-bit words, which
+            // fault when unaligned on Cortex-M0+.
+            alignas(4) u8 column[8] = {};
+            for (u8 lane = 0; lane < lanes; ++lane) {
+                column[lane] = lane_data[lane][byte_index];
             }
+            // planes[0] is the MSB plane; lane 0 is each plane's bit 0.
+            u8 planes[8];
+            fl::transpose8x1_MSB(column, planes);
             // Store transfers little-endian: DMA reads narrow transfers from
             // ascending byte addresses.
             if (lanes == 8) {
-                words[byte_offset / 4u] = high;
-                words[byte_offset / 4u + 1u] = low;
+                words[byte_offset / 4u] = (static_cast<u32>(planes[0]) << 24) |
+                                          (static_cast<u32>(planes[1]) << 16) |
+                                          (static_cast<u32>(planes[2]) << 8) | planes[3];
+                words[byte_offset / 4u + 1u] = (static_cast<u32>(planes[4]) << 24) |
+                                               (static_cast<u32>(planes[5]) << 16) |
+                                               (static_cast<u32>(planes[6]) << 8) | planes[7];
             } else {
+                u32 low = 0;  // 8 planes of `lanes` bits, MSB plane first
+                for (u8 plane = 0; plane < 8; ++plane) {
+                    low = (low << lanes) | planes[plane];
+                }
                 words[byte_offset / 4u] |= low << (8u * (byte_offset % 4u));
             }
             byte_offset += lanes;
